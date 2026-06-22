@@ -1,18 +1,33 @@
-import pandas as pd
+from utils.data_loader import load_dataset
 
 DATA_PATH = "data/AI_Based_Medical_Insurance_Claim_Fraud_Detection_Dataset.csv"
-df = pd.read_csv(DATA_PATH)
 
-print(df.head())
 
-print("\nDataset Shape:")
-print(df.shape)
+def main():
 
-print("\nColumn Names:")
-print(df.columns)
+    df = load_dataset(DATA_PATH)
 
-print("\nData Types:")
-print(df.dtypes)
+    print("\n===== DATASET SHAPE =====")
+    print(df.shape)
 
-print("\nMissing Values:")
-print(df.isnull().sum())
+    print("\n===== FIRST 5 ROWS =====")
+    print(df.head())
+
+    print("\n===== COLUMN NAMES =====")
+    print(df.columns.tolist())
+
+    print("\n===== DATA TYPES =====")
+    print(df.dtypes)
+
+    print("\n===== MISSING VALUES =====")
+    print(df.isnull().sum())
+
+    print("\n===== DATASET INFO =====")
+    df.info()
+
+    print("\n===== STATISTICAL SUMMARY =====")
+    print(df.describe(include="all"))
+
+
+if __name__ == "__main__":
+    main()
