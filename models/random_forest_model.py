@@ -6,7 +6,7 @@ def train_random_forest(X_train, X_test, y_train, y_test):
     Train a Random Forest model and evaluate its accuracy.
     """
     
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight="balanced", min_samples_leaf=5)
     
     model.fit(X_train, y_train)
 

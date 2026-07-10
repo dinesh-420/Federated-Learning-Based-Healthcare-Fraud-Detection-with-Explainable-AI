@@ -22,4 +22,11 @@ def evaluate_model(model, X_test, y_test):
     print("Recall:", recall)
     print("F1-Score:", f1)
 
+    print("\nFeature Importance:")
+
+    feature_importance = model.feature_importances_
+
+    for feature, importance in zip(X_test.columns, feature_importance):
+        print(f"{feature}: {importance:.4f}")
+
  
