@@ -3,6 +3,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from collections import Counter 
+import joblib
 
 def preprocess_data(df):
     """
@@ -13,10 +14,15 @@ def preprocess_data(df):
     X = df.drop(columns=["fraud_label"])
     y = df["fraud_label"]
 
-    label_encoder = LabelEncoder()
+    label_encoders = {}
 
     for column in X.select_dtypes(include=["object"]).columns:
-        X[column] = label_encoder.fit_transform(X[column])
+       encoder = LabelEncoder()
+       X[column] = encoder.fit_transform(X[column])
+       label_encoders[column] = encoder
+
+    joblib.dump(label_encoders, "saved_objects/label_encoders.pkl")
+    print("Label encoders saved successfully!")
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
@@ -28,3 +34,5 @@ def preprocess_data(df):
     print("After SMOTE:", Counter(y_train))
     
     return X_train, X_test, y_train, y_test
+
+ 
