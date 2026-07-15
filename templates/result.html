@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Prediction Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <h1>Healthcare Fraud Detection System</h1>
+
+    <form>
+
+        <h2>Prediction Result</h2>
+
+        <h3 style="color: {{ color }};">{{ result }}</h3>
+
+        <br>
+
+        <a href="/">
+            <button type="button">
+                Predict Another Claim
+            </button>
+        </a>
+
+    </form>
+
+</body>
+
+</html>
