@@ -16,7 +16,60 @@
 
         <h3 style="color: {{ color }};">{{ result }}</h3>
 
-        <br>
+        <p><strong>Confidence:</strong> {{ confidence }}%</p>
+
+        <p><strong>Fraud Probability:</strong> {{ fraud_probability }}%</p>
+
+        <p><strong>Model Used:</strong> {{ model_name }}</p>    
+         
+        {% if shap_explanations %}
+
+        <h3>Top Factors Influencing Prediction</h3>
+
+        <table border="1" cellpadding="8" cellspacing="0" style="margin:auto;">
+            <tr>
+               
+                <th>Feature</th>
+                <th>Impact</th>
+                <th>Explanation</th>
+            
+            </tr>
+   
+            {% for feature, impact, explanation in shap_explanations %}
+            <tr>
+
+               <td>{{ feature.replace('_', ' ').title() }}</td>
+
+               {% if impact > 0 %}
+                   <td style="color:red;">▲ {{ impact }}</td>
+               {% else %}
+                   <td style="color:green;">▼ {{ impact }}</td>
+               {% endif %}
+
+               <td>{{ explanation }}</td>
+
+            </tr>
+            {% endfor %}
+
+        </table>
+
+        {% endif %}
+    
+       {% if show_shap %}
+
+       <h3>SHAP Summary Plot</h3>
+
+       <img src="{{ url_for('static', filename='shap_summary.png') }}"
+            class="shap-image">
+
+       <br><br>
+
+       <h3>SHAP Bar Plot</h3>
+
+       <img src="{{ url_for('static', filename='shap_bar.png') }}"
+            class="shap-image">
+
+        {% endif %}
 
         <a href="/">
             <button type="button">

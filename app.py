@@ -1,11 +1,18 @@
 from flask import Flask, render_template, request
 import pandas as pd
 import joblib
+import shap
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 from utils.model_loader import load_model, load_label_encoders
+
 
 app = Flask(__name__)
 
 model = load_model()
+explainer = shap.TreeExplainer(model)
+
 label_encoders = load_label_encoders()
 
 feature_columns = joblib.load("saved_objects/feature_columns.pkl")
@@ -14,9 +21,11 @@ print("Model loaded successfully!")
 print("Label encoders loaded successfully!")
 print("Feature columns loaded successfully!")
 
+
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -55,56 +64,141 @@ def predict():
 
     claim_df = pd.DataFrame(claim_data)
 
-    print("\nClaim DataFrame:")
-    print(claim_df)
-    
-    print("Treatment Category Classes:")
-    print(label_encoders["treatment_category"].classes_)
-    
+    # Encode categorical columns safely
     for column, encoder in label_encoders.items():
-         claim_df[column] = encoder.transform(claim_df[column])
 
-    print("\nEncoded Claim DataFrame:")
-    print(claim_df)
+         try:
+             claim_df[column] = encoder.transform(claim_df[column])
 
+         except ValueError:
+
+             if column == "diagnosis_code":
+                  message = "❌ Unknown Diagnosis Code. Please enter a valid diagnosis code."
+             else:
+                   message = f"❌ Invalid {column.replace('_', ' ').title()}."
+
+             print(message)
+         
+             return render_template(
+                 "result.html",
+                  result=message,
+                  color="orange", 
+                  confidence="--",
+                  fraud_probability="--",
+                  model_name="Random Forest Classifier",
+                  shap_explanations=None,
+                  show_shap=False
+             )
+
+    # Arrange feature order
     claim_df = claim_df[feature_columns]
 
-    print("\nClaim after arranging feature order:")
-    print(claim_df)
-
+    # Prediction
     prediction = model.predict(claim_df)
+    probability = model.predict_proba(claim_df)
 
-    print("\nPrediction:")
-    print(prediction)
+    # SHAP Explainability
+    shap_values = explainer.shap_values(claim_df)
 
-    print("Patient Age:", patient_age)
-    print("Gender:", patient_gender)
-    print("Hospital Type:", hospital_type)
-    print("Treatment Category:", treatment_category)
-    print("Diagnosis Code:", diagnosis_code)
-    print("Claim Amount:", claim_amount)
-    print("Approved Amount:", approved_amount)
-    print("Hospital Stay Days:", hospital_stay_days)
-    print("Previous Claims Count:", previous_claims_count)
-    print("Policy Tenure:", policy_tenure_years)
-    print("Submission Delay:", claim_submission_delay_days)
-    print("High Risk Procedure:", high_risk_procedure_flag)
-    print("Document Mismatch:", document_mismatch_flag)
-    print("Anomaly Score:", anomaly_score)
+    # Generate SHAP Summary Plot
+   
+    plt.figure()
+
+    # For newer SHAP versions
+    shap.summary_plot(
+         shap_values[:, :, 1],
+         claim_df,
+         show=False
+    )
+
+    plt.tight_layout()
+
+    plt.savefig("static/shap_summary.png", bbox_inches="tight")
+
+    plt.close()
+    
+    # Generate SHAP Bar Plot
+
+    plt.figure()
+
+    shap.plots.bar(
+        shap.Explanation(
+            values=shap_values[0, :, 1],
+            base_values=explainer.expected_value[1],
+            data=claim_df.iloc[0],
+            feature_names=claim_df.columns
+        ),
+        show=False
+    )
+
+    plt.tight_layout()
+
+    plt.savefig("static/shap_bar.png", bbox_inches="tight")
+
+    plt.close()
+
+    # Get SHAP values for the Fraud class (class index = 1)
+    feature_impacts = shap_values[0, :, 1]
+
+    shap_explanations = []
+
+    for feature, impact in zip(claim_df.columns, feature_impacts):
+
+        impact = round(float(impact), 4)
+
+        if impact >= 0.10:
+           explanation = "Strongly increased fraud probability"
+
+        elif impact > 0:
+             explanation = "Slightly increased fraud probability"
+
+        elif impact <= -0.10:
+              explanation = "Strongly reduced fraud probability"
+
+        else:
+              explanation = "Slightly reduced fraud probability"
+
+        shap_explanations.append(
+              (feature, impact, explanation)
+        )
+    # Sort by absolute impact
+    shap_explanations = sorted(
+         shap_explanations,
+         key=lambda x: abs(x[1]),
+         reverse=True
+    )
+
+    # Keep only Top 5 features
+    shap_explanations = shap_explanations[:5]
+
+    fraud_probability = round(probability[0][1] * 100, 2)
+    model_name = "Random Forest Classifier"
 
     if prediction[0] == 1:
         result = "🚨 Fraudulent Claim"
+        color = "red"
+        confidence = round(probability[0][1] * 100, 2)
     else:
         result = "✅ Genuine Claim"
+        color = "green"
+        confidence = round(probability[0][0] * 100, 2)
 
-    if prediction[0] == 1:
-      result = "🚨 Fraudulent Claim"
-      color = "red"
-    else:
-      result = "✅ Genuine Claim"
-      color = "green"
+    # Clean terminal output
+    print(f"Prediction: {result}")
+    print(f"Confidence: {confidence}%")
+    print(f"Fraud Probability: {fraud_probability}%")
 
-    return render_template( "result.html", result=result,color=color)
+    return render_template(
+        "result.html",
+        result=result,
+        color=color,
+        confidence=confidence,
+        fraud_probability=fraud_probability,
+        model_name=model_name,
+        shap_explanations=shap_explanations,
+        show_shap=True
+    )
+
 
 if __name__ == "__main__":
     app.run(debug=True)

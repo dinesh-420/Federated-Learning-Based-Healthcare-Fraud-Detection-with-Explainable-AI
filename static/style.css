@@ -11,7 +11,8 @@ h1 {
 
 form {
     background: white;
-    width: 500px;
+    width: 900px;
+    max-width: 95%;
     margin: auto;
     padding: 25px;
     border-radius: 10px;
@@ -42,4 +43,12 @@ button {
 
 button:hover {
     background: #2980b9;
+}
+
+.shap-image{
+    width:100%;
+    max-width:700px;
+    display:block;
+    margin:20px auto;
+    border-radius:8px;
 }
