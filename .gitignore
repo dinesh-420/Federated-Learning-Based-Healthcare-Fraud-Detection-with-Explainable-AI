@@ -11,3 +11,12 @@ reports/
 
 .DS_Store
 Thumbs.db
+
+config.py
+
+# Generated reports
+static/prediction_report.pdf
+
+# Generated SHAP plots
+static/shap_bar.png
+static/shap_summary.png

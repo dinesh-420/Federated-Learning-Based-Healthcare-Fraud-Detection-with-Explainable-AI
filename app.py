@@ -7,6 +7,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from utils.model_loader import load_model, load_label_encoders
 from pdf_report import generate_pdf
+from utils.database import get_connection
 
 app = Flask(__name__)
 
@@ -298,6 +299,57 @@ def predict():
     print(f"Prediction: {result}")
     print(f"Confidence: {confidence}%")
     print(f"Fraud Probability: {fraud_probability}%")
+  
+    try:
+        print("Saving prediction to database...")
+
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        query = """
+        INSERT INTO predictions (
+            patient_age,
+            patient_gender,
+            hospital_type,
+            treatment_category,
+            diagnosis_code,
+            claim_amount,
+            approved_amount,
+            prediction,
+            confidence,
+            fraud_probability
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+        values = (
+            int(patient_age),
+            patient_gender,
+            hospital_type,
+            treatment_category,
+            diagnosis_code,
+            float(claim_amount),
+            float(approved_amount),
+            result,
+            confidence,
+            fraud_probability
+        )
+
+        cursor.execute(query, values)
+
+        connection.commit()
+
+        print("Prediction saved successfully!")
+
+    except Exception as e:
+        print("DATABASE ERROR:", e)
+
+    finally:
+        try:
+           cursor.close()
+           connection.close()
+        except:
+            pass
 
     # Generate PDF Report
     generate_pdf(
@@ -321,6 +373,27 @@ def predict():
         prediction_success=True
     )
 
+@app.route("/history")
+def history():
+
+    connection = get_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM predictions
+        ORDER BY prediction_time DESC
+    """)
+
+    predictions = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return render_template(
+        "history.html",
+        predictions=predictions
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

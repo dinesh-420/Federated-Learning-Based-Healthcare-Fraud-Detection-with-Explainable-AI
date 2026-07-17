@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prediction History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Prediction History</h1>
+
+    <table border="1" cellpadding="8" cellspacing="0">
+
+        <tr>
+            <th>ID</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Hospital</th>
+            <th>Treatment</th>
+            <th>Diagnosis</th>
+            <th>Claim</th>
+            <th>Approved</th>
+            <th>Prediction</th>
+            <th>Confidence</th>
+            <th>Fraud %</th>
+            <th>Time</th>
+        </tr>
+
+        {% for row in predictions %}
+
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.patient_age }}</td>
+            <td>{{ row.patient_gender }}</td>
+            <td>{{ row.hospital_type }}</td>
+            <td>{{ row.treatment_category }}</td>
+            <td>{{ row.diagnosis_code }}</td>
+            <td>{{ row.claim_amount }}</td>
+            <td>{{ row.approved_amount }}</td>
+            <td>{{ row.prediction }}</td>
+            <td>{{ row.confidence }}%</td>
+            <td>{{ row.fraud_probability }}%</td>
+            <td>{{ row.prediction_time }}</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    <br>
+
+    <a href="/">⬅ Back to Prediction</a>
+
+</div>
+
+</body>
+</html>
