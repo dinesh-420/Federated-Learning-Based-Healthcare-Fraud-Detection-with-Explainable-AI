@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from utils.model_loader import load_model, load_label_encoders
-
+from pdf_report import generate_pdf
 
 app = Flask(__name__)
 
@@ -64,6 +64,116 @@ def predict():
 
     claim_df = pd.DataFrame(claim_data)
 
+    # Input Validation
+   
+    if claim_df["patient_age"][0] < 0 or claim_df["patient_age"][0] > 120:
+        return render_template(
+            "result.html",
+            result="❌ Invalid Patient Age.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["claim_amount"][0] <= 0:
+        return render_template(
+            "result.html",
+            result="❌ Claim Amount must be greater than 0.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["approved_amount"][0] < 0:
+        return render_template(
+            "result.html",
+            result="❌ Approved Amount cannot be negative.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["approved_amount"][0] > claim_df["claim_amount"][0]:
+        return render_template(
+            "result.html",
+            result="❌ Approved Amount cannot exceed Claim Amount.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["hospital_stay_days"][0] < 0:
+        return render_template(
+            "result.html",
+            result="❌ Hospital Stay Days cannot be negative.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["previous_claims_count"][0] < 0:
+        return render_template(
+            "result.html",
+            result="❌ Previous Claims Count cannot be negative.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["policy_tenure_years"][0] < 0:
+        return render_template(
+            "result.html",
+            result="❌ Policy Tenure cannot be negative.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["claim_submission_delay_days"][0] < 0:
+        return render_template(
+            "result.html",
+            result="❌ Claim Submission Delay cannot be negative.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
+    if claim_df["anomaly_score"][0] < 0 or claim_df["anomaly_score"][0] > 1:
+        return render_template(
+            "result.html",
+            result="❌ Anomaly Score must be between 0 and 1.",
+            color="orange",
+            confidence="--",
+            fraud_probability="--",
+            model_name="Random Forest Classifier",
+            show_shap=False,
+            prediction_success=False
+        )
+
     # Encode categorical columns safely
     for column, encoder in label_encoders.items():
 
@@ -87,7 +197,8 @@ def predict():
                   fraud_probability="--",
                   model_name="Random Forest Classifier",
                   shap_explanations=None,
-                  show_shap=False
+                  show_shap=False,
+                  prediction_success=False
              )
 
     # Arrange feature order
@@ -188,6 +299,16 @@ def predict():
     print(f"Confidence: {confidence}%")
     print(f"Fraud Probability: {fraud_probability}%")
 
+    # Generate PDF Report
+    generate_pdf(
+        "static/prediction_report.pdf",
+        result,
+        confidence,
+        fraud_probability,
+        model_name,
+        shap_explanations
+    )
+
     return render_template(
         "result.html",
         result=result,
@@ -196,7 +317,8 @@ def predict():
         fraud_probability=fraud_probability,
         model_name=model_name,
         shap_explanations=shap_explanations,
-        show_shap=True
+        show_shap=True,
+        prediction_success=True
     )
 
 

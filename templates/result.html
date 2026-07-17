@@ -14,19 +14,29 @@
 
         <h2>Prediction Result</h2>
 
-        <h3 style="color: {{ color }};">{{ result }}</h3>
+        {% if color=="green" %}
+        <h3 class="success-message">{{ result }}</h3>
+        {% else %}
+        <h3 class="error-message">{{ result }}</h3>
+        {% endif %}
+
+        {% if prediction_success %}
 
         <p><strong>Confidence:</strong> {{ confidence }}%</p>
 
         <p><strong>Fraud Probability:</strong> {{ fraud_probability }}%</p>
 
-        <p><strong>Model Used:</strong> {{ model_name }}</p>    
+        <p><strong>Model Used:</strong> {{ model_name }}</p>
+
+        {% endif %}
          
         {% if shap_explanations %}
 
-        <h3>Top Factors Influencing Prediction</h3>
+        <h3 class="section-title">
+        Top Factors Influencing Prediction
+        </h3>
 
-        <table border="1" cellpadding="8" cellspacing="0" style="margin:auto;">
+        <table class="result-table">
             <tr>
                
                 <th>Feature</th>
@@ -55,27 +65,39 @@
 
         {% endif %}
     
-       {% if show_shap %}
+      {% if prediction_success and show_shap %}
 
-       <h3>SHAP Summary Plot</h3>
+       <h3 class="section-title">
+       SHAP Summary Plot
+       </h3>
 
        <img src="{{ url_for('static', filename='shap_summary.png') }}"
             class="shap-image">
 
        <br><br>
 
-       <h3>SHAP Bar Plot</h3>
+       <h3 class="section-title">
+       SHAP Bar Plot
+       </h3>
 
        <img src="{{ url_for('static', filename='shap_bar.png') }}"
             class="shap-image">
 
-        {% endif %}
+       {% endif %}
 
-        <a href="/">
+       <a href="{{ url_for('static', filename='prediction_report.pdf') }}" download>
+            <button type="button">
+                📄 Download Report
+            </button>
+       </a>
+
+       <br><br>
+
+       <a href="/">
             <button type="button">
                 Predict Another Claim
             </button>
-        </a>
+       </a>
 
     </form>
 

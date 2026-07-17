@@ -52,3 +52,46 @@ button:hover {
     margin:20px auto;
     border-radius:8px;
 }
+
+.result-card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    margin-top:20px;
+    box-shadow:0 0 10px lightgray;
+}
+
+.result-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+.result-table th{
+    background:#3498db;
+    color:white;
+    padding:10px;
+}
+
+.result-table td{
+    padding:10px;
+    text-align:center;
+    border:1px solid #ddd;
+}
+
+.section-title{
+    margin-top:25px;
+    color:#2c3e50;
+}
+
+.error-message{
+    color:#d63031;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.success-message{
+    color:#27ae60;
+    font-size:22px;
+    font-weight:bold;
+}
