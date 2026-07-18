@@ -8,11 +8,15 @@ import matplotlib.pyplot as plt
 from utils.model_loader import load_model, load_label_encoders
 from pdf_report import generate_pdf
 from utils.database import get_connection
+from federated_learning.global_predict import FederatedPredictor
 
 app = Flask(__name__)
 
 model = load_model()
 explainer = shap.TreeExplainer(model)
+
+# Federated Learning Model
+federated_model = FederatedPredictor()
 
 label_encoders = load_label_encoders()
 
@@ -30,6 +34,8 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+
+    model_type = request.form["model_type"]
 
     patient_age = request.form["patient_age"]
     patient_gender = request.form["patient_gender"]
@@ -204,87 +210,111 @@ def predict():
 
     # Arrange feature order
     claim_df = claim_df[feature_columns]
+   
+    hospital_results = None
 
     # Prediction
-    prediction = model.predict(claim_df)
-    probability = model.predict_proba(claim_df)
 
-    # SHAP Explainability
-    shap_values = explainer.shap_values(claim_df)
+    if model_type == "random_forest":
 
-    # Generate SHAP Summary Plot
+       prediction = model.predict(claim_df)
+       probability = model.predict_proba(claim_df)
+
+       # SHAP Explainability
+       shap_values = explainer.shap_values(claim_df)
+
+       # Generate SHAP Summary Plot
    
-    plt.figure()
+       plt.figure()
 
-    # For newer SHAP versions
-    shap.summary_plot(
-         shap_values[:, :, 1],
-         claim_df,
-         show=False
-    )
+       # For newer SHAP versions
+       shap.summary_plot(
+            shap_values[:, :, 1],
+            claim_df,
+            show=False
+       )
 
-    plt.tight_layout()
+       plt.tight_layout()
 
-    plt.savefig("static/shap_summary.png", bbox_inches="tight")
+       plt.savefig("static/shap_summary.png", bbox_inches="tight")
 
-    plt.close()
+       plt.close()
     
-    # Generate SHAP Bar Plot
+       # Generate SHAP Bar Plot
 
-    plt.figure()
+       plt.figure()
 
-    shap.plots.bar(
-        shap.Explanation(
-            values=shap_values[0, :, 1],
-            base_values=explainer.expected_value[1],
-            data=claim_df.iloc[0],
-            feature_names=claim_df.columns
-        ),
-        show=False
-    )
+       shap.plots.bar(
+           shap.Explanation(
+               values=shap_values[0, :, 1],
+               base_values=explainer.expected_value[1],
+               data=claim_df.iloc[0],
+               feature_names=claim_df.columns
+            ),
+            show=False
+       )
 
-    plt.tight_layout()
+       plt.tight_layout()
 
-    plt.savefig("static/shap_bar.png", bbox_inches="tight")
+       plt.savefig("static/shap_bar.png", bbox_inches="tight")
 
-    plt.close()
+       plt.close()
 
-    # Get SHAP values for the Fraud class (class index = 1)
-    feature_impacts = shap_values[0, :, 1]
+       # Get SHAP values for the Fraud class (class index = 1)
+       feature_impacts = shap_values[0, :, 1]
 
-    shap_explanations = []
+       shap_explanations = []
 
-    for feature, impact in zip(claim_df.columns, feature_impacts):
+       for feature, impact in zip(claim_df.columns, feature_impacts):
 
-        impact = round(float(impact), 4)
+            impact = round(float(impact), 4)
 
-        if impact >= 0.10:
-           explanation = "Strongly increased fraud probability"
+            if impact >= 0.10:
+                explanation = "Strongly increased fraud probability"
 
-        elif impact > 0:
-             explanation = "Slightly increased fraud probability"
+            elif impact > 0:
+                explanation = "Slightly increased fraud probability"
 
-        elif impact <= -0.10:
-              explanation = "Strongly reduced fraud probability"
+            elif impact <= -0.10:
+                explanation = "Strongly reduced fraud probability"
 
-        else:
-              explanation = "Slightly reduced fraud probability"
+            else:
+                explanation = "Slightly reduced fraud probability"
 
-        shap_explanations.append(
-              (feature, impact, explanation)
-        )
-    # Sort by absolute impact
-    shap_explanations = sorted(
-         shap_explanations,
-         key=lambda x: abs(x[1]),
-         reverse=True
-    )
+            shap_explanations.append(
+                (feature, impact, explanation)
+            )
+       # Sort by absolute impact
+       shap_explanations = sorted(
+           shap_explanations,
+           key=lambda x: abs(x[1]),
+           reverse=True
+       )
 
-    # Keep only Top 5 features
-    shap_explanations = shap_explanations[:5]
+       # Keep only Top 5 features
+       shap_explanations = shap_explanations[:5]
+       show_shap = True
 
+    else:
+      
+        prediction, probability, hospital_results = federated_model.predict(claim_df)
+
+        shap_explanations = [
+            (
+                "Federated Learning",
+                 0,
+                "Prediction generated using ensemble of Hospital A, Hospital B and Hospital C."
+            )
+        ]
+
+        show_shap = False
+    
     fraud_probability = round(probability[0][1] * 100, 2)
-    model_name = "Random Forest Classifier"
+     
+    if model_type == "random_forest":
+        model_name = "Random Forest Classifier"
+    else:
+        model_name = "Federated Learning Ensemble"
 
     if prediction[0] == 1:
         result = "🚨 Fraudulent Claim"
@@ -294,6 +324,13 @@ def predict():
         result = "✅ Genuine Claim"
         color = "green"
         confidence = round(probability[0][0] * 100, 2)
+
+    if model_type == "federated":
+        hospital_results.append({
+            "hospital": "Final Global Model",
+            "fraud_probability": fraud_probability,
+            "prediction": result
+        })
 
     # Clean terminal output
     print(f"Prediction: {result}")
@@ -317,9 +354,11 @@ def predict():
             approved_amount,
             prediction,
             confidence,
-            fraud_probability
+            fraud_probability,
+            model_name
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+
         """
 
         values = (
@@ -332,7 +371,8 @@ def predict():
             float(approved_amount),
             result,
             confidence,
-            fraud_probability
+            fraud_probability,
+            model_name
         )
 
         cursor.execute(query, values)
@@ -369,7 +409,8 @@ def predict():
         fraud_probability=fraud_probability,
         model_name=model_name,
         shap_explanations=shap_explanations,
-        show_shap=True,
+        show_shap=show_shap,
+        hospital_results=hospital_results,
         prediction_success=True
     )
 

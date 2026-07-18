@@ -8,98 +8,177 @@
 
 <body>
 
-    <h1>Healthcare Fraud Detection System</h1>
+<h1>Healthcare Fraud Detection System</h1>
 
-    <form>
+<form>
 
-        <h2>Prediction Result</h2>
+    <h2>Prediction Result</h2>
 
-        {% if color=="green" %}
+    {% if color=="green" %}
         <h3 class="success-message">{{ result }}</h3>
-        {% else %}
+    {% else %}
         <h3 class="error-message">{{ result }}</h3>
-        {% endif %}
+    {% endif %}
 
-        {% if prediction_success %}
+    {% if prediction_success %}
 
-        <p><strong>Confidence:</strong> {{ confidence }}%</p>
+    <p><strong>Confidence:</strong> {{ confidence }}%</p>
 
-        <p><strong>Fraud Probability:</strong> {{ fraud_probability }}%</p>
+    <p><strong>Fraud Probability:</strong> {{ fraud_probability }}%</p>
 
-        <p><strong>Model Used:</strong> {{ model_name }}</p>
+    <p><strong>Model Used:</strong> {{ model_name }}</p>
 
-        {% endif %}
-         
-        {% if shap_explanations %}
+    {% endif %}
+
+    {% if shap_explanations %}
+
+    <h3 class="section-title">
+        Top Factors Influencing Prediction
+    </h3>
+
+    <table class="result-table">
+
+        <tr>
+            <th>Feature</th>
+            <th>Impact</th>
+            <th>Explanation</th>
+        </tr>
+
+        {% for feature, impact, explanation in shap_explanations %}
+
+        <tr>
+
+            <td>{{ feature.replace('_', ' ').title() }}</td>
+
+            {% if impact > 0 %}
+                <td style="color:red;">▲ {{ impact }}</td>
+            {% else %}
+                <td style="color:green;">▼ {{ impact }}</td>
+            {% endif %}
+
+            <td>{{ explanation }}</td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    {% endif %}
+
+
+    {% if prediction_success %}
+
+        {% if show_shap %}
 
         <h3 class="section-title">
-        Top Factors Influencing Prediction
+            SHAP Summary Plot
+        </h3>
+
+        <img src="{{ url_for('static', filename='shap_summary.png') }}"
+             class="shap-image">
+
+        <br><br>
+
+        <h3 class="section-title">
+            SHAP Bar Plot
+        </h3>
+
+        <img src="{{ url_for('static', filename='shap_bar.png') }}"
+             class="shap-image">
+
+        {% else %}
+
+        <!-- Hospital Predictions -->
+
+        {% if hospital_results %}
+
+        <h3 class="section-title">
+            Hospital-wise Predictions
         </h3>
 
         <table class="result-table">
+
             <tr>
-               
-                <th>Feature</th>
-                <th>Impact</th>
-                <th>Explanation</th>
-            
+                <th>Hospital</th>
+                <th>Fraud Probability</th>
+                <th>Prediction</th>
             </tr>
-   
-            {% for feature, impact, explanation in shap_explanations %}
+
+            {% for hospital in hospital_results %}
+
             <tr>
 
-               <td>{{ feature.replace('_', ' ').title() }}</td>
+                <td>{{ hospital.hospital }}</td>
 
-               {% if impact > 0 %}
-                   <td style="color:red;">▲ {{ impact }}</td>
-               {% else %}
-                   <td style="color:green;">▼ {{ impact }}</td>
-               {% endif %}
+                <td>{{ hospital.fraud_probability }}%</td>
 
-               <td>{{ explanation }}</td>
+                <td>{{ hospital.prediction }}</td>
 
             </tr>
+
             {% endfor %}
 
         </table>
 
+        <br>
+
         {% endif %}
-    
-      {% if prediction_success and show_shap %}
 
-       <h3 class="section-title">
-       SHAP Summary Plot
-       </h3>
+        <!-- Federated Card -->
 
-       <img src="{{ url_for('static', filename='shap_summary.png') }}"
-            class="shap-image">
+        <h3 class="section-title">
+            Federated Learning Information
+        </h3>
 
-       <br><br>
+        <div class="federated-box">
 
-       <h3 class="section-title">
-       SHAP Bar Plot
-       </h3>
+            <p>
+                ✅ Prediction generated using
+                <strong>Federated Learning</strong>.
+            </p>
 
-       <img src="{{ url_for('static', filename='shap_bar.png') }}"
-            class="shap-image">
+            <p>✔ Hospital A model participated</p>
 
-       {% endif %}
+            <p>✔ Hospital B model participated</p>
 
-       <a href="{{ url_for('static', filename='prediction_report.pdf') }}" download>
-            <button type="button">
-                📄 Download Report
-            </button>
-       </a>
+            <p>✔ Hospital C model participated</p>
 
-       <br><br>
+            <hr>
 
-       <a href="/">
-            <button type="button">
-                Predict Another Claim
-            </button>
-       </a>
+            <p>
+                <strong>Aggregation Method:</strong>
+                Average Probability Voting
+            </p>
 
-    </form>
+            <p>
+                <strong>Hospitals Participating:</strong>
+                3
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    {% endif %}
+
+    <br>
+
+    <a href="{{ url_for('static', filename='prediction_report.pdf') }}" download>
+        <button type="button">
+            📄 Download Report
+        </button>
+    </a>
+
+    <br><br>
+
+    <a href="/">
+        <button type="button">
+            Predict Another Claim
+        </button>
+    </a>
+
+</form>
 
 </body>
 

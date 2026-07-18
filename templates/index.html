@@ -11,7 +11,15 @@
     <h1>Healthcare Fraud Detection System</h1>
 
     <form action="/predict" method="POST">
+ 
+        <label><b>Select Prediction Model</b></label><br>
 
+        <select name="model_type" required>
+            <option value="random_forest">Random Forest</option>
+            <option value="federated">Federated Learning</option>
+        </select>
+
+        <br><br>
      
 
         <label>Patient Age</label><br>

@@ -26,6 +26,7 @@
             <th>Confidence</th>
             <th>Fraud %</th>
             <th>Time</th>
+            <th>Model Used</th>
         </tr>
 
         {% for row in predictions %}
@@ -43,6 +44,7 @@
             <td>{{ row.confidence }}%</td>
             <td>{{ row.fraud_probability }}%</td>
             <td>{{ row.prediction_time }}</td>
+            <td>{{ prediction.model_used }}</td>
         </tr>
 
         {% endfor %}
