@@ -25,6 +25,12 @@ def preprocess_data(df):
     print("Label encoders saved successfully!")
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Save test dataset for model comparison (Phase 13)
+    joblib.dump(X_test, "saved_objects/X_test.pkl")
+    joblib.dump(y_test, "saved_objects/y_test.pkl")
+
+    print("Test dataset saved successfully!")
     
     print("Before SMOTE:", Counter(y_train))
 

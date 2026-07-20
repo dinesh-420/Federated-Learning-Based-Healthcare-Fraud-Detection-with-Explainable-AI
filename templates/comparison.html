@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Model Comparison Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <h1>Healthcare Fraud Detection System</h1>
+
+    <div class="result-card">
+
+        <h2 class="section-title">Model Performance Comparison</h2>
+
+        <table class="result-table">
+
+            <tr>
+                <th>Metric</th>
+                <th>Random Forest</th>
+                <th>Federated Learning</th>
+            </tr>
+
+            <tr>
+                <td>Accuracy</td>
+                <td>{{ "%.2f"|format(comparison["Random Forest"]["accuracy"] * 100) }}%</td>
+                <td>{{ "%.2f"|format(comparison["Federated Learning"]["accuracy"] * 100) }}%</td>
+            </tr>
+
+            <tr>
+                <td>Precision</td>
+                <td>{{ "%.2f"|format(comparison["Random Forest"]["precision"] * 100) }}%</td>
+                <td>{{ "%.2f"|format(comparison["Federated Learning"]["precision"] * 100) }}%</td>
+            </tr>
+
+            <tr>
+                <td>Recall</td>
+                <td>{{ "%.2f"|format(comparison["Random Forest"]["recall"] * 100) }}%</td>
+                <td>{{ "%.2f"|format(comparison["Federated Learning"]["recall"] * 100) }}%</td>
+            </tr>
+
+            <tr>
+                <td>F1 Score</td>
+                 <td>{{ "%.2f"|format(comparison["Random Forest"]["f1_score"] * 100) }}%</td>
+                 <td>{{ "%.2f"|format(comparison["Federated Learning"]["f1_score"] * 100) }}%</td>
+            </tr>
+
+            <tr>
+                <td>ROC-AUC</td>
+                <td>{{ "%.2f"|format(comparison["Random Forest"]["roc_auc"] * 100) }}%</td>
+                <td>{{ "%.2f"|format(comparison["Federated Learning"]["roc_auc"] * 100) }}%</td>
+            </tr>
+
+        </table>
+
+        <br>
+
+        <div style="text-align:center;">
+
+            <a href="/" class="nav-button">
+                ⬅ Back Home
+            </a>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

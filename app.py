@@ -9,6 +9,7 @@ from utils.model_loader import load_model, load_label_encoders
 from pdf_report import generate_pdf
 from utils.database import get_connection
 from federated_learning.global_predict import FederatedPredictor
+import json
 
 app = Flask(__name__)
 
@@ -436,5 +437,17 @@ def history():
         predictions=predictions
     )
 
+@app.route("/comparison")
+def comparison():
+
+    with open("saved_objects/model_comparison.json", "r") as file:
+        comparison_data = json.load(file)
+
+    print(comparison_data)
+    
+    return render_template(
+        "comparison.html",
+        comparison=comparison_data
+    )
 if __name__ == "__main__":
     app.run(debug=True)
