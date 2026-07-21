@@ -10,6 +10,11 @@ from pdf_report import generate_pdf
 from utils.database import get_connection
 from federated_learning.global_predict import FederatedPredictor
 import json
+import csv
+from flask import Response
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -449,5 +454,129 @@ def comparison():
         "comparison.html",
         comparison=comparison_data
     )
+
+@app.route("/download_csv")
+def download_csv():
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM predictions")
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    def generate():
+
+        header = [
+            "ID",
+            "Age",
+            "Gender",
+            "Hospital",
+            "Treatment",
+            "Diagnosis",
+            "Claim",
+            "Approved",
+            "Prediction",
+            "Confidence",
+            "Fraud %",
+            "Time",
+            "Model"
+        ]
+
+        yield ",".join(header) + "\n"
+
+        for row in data:
+
+            yield ",".join([
+                str(row["id"]),
+                str(row["patient_age"]),
+                row["patient_gender"],
+                row["hospital_type"],
+                row["treatment_category"],
+                row["diagnosis_code"],
+                str(row["claim_amount"]),
+                str(row["approved_amount"]),
+                "Genuine" if "Genuine" in row["prediction"] else "Fraud",
+                str(row["confidence"]),
+                str(row["fraud_probability"]),
+                str(row["prediction_time"]),
+                str(row["model_name"])
+            ]) + "\n"
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+            "attachment;filename=prediction_history.csv"
+        }
+    )
+print(app.url_map)
+
+@app.route("/download_pdf")
+def download_pdf():
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM predictions
+        ORDER BY prediction_time DESC
+    """)
+
+    predictions = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    buffer = BytesIO()
+
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+
+    width, height = letter
+
+    y = height - 40
+
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(180, y, "Prediction History Report")
+
+    y -= 30
+
+    pdf.setFont("Helvetica", 10)
+
+    for row in predictions:
+        prediction = "Genuine" if "Genuine" in row["prediction"] else "Fraud"
+        text = (
+            f"ID:{row['id']} | "
+            f"Age:{row['patient_age']} | "
+            f"Prediction:{prediction} | "
+            f"Confidence:{row['confidence']}% | "
+            f"Model:{row['model_name']}"
+        )
+
+        pdf.drawString(30, y, text)
+
+        y -= 18
+
+        if y < 40:
+            pdf.showPage()
+            pdf.setFont("Helvetica", 10)
+            y = height - 40
+
+    pdf.save()
+
+    buffer.seek(0)
+
+    return Response(
+        buffer,
+        mimetype="application/pdf",
+        headers={
+            "Content-Disposition":
+            "attachment; filename=prediction_history.pdf"
+        }
+    )
+
 if __name__ == "__main__":
     app.run(debug=True)

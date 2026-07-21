@@ -3,69 +3,202 @@
 
 <head>
     <title>Model Comparison Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" 
+          href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
-    <h1>Healthcare Fraud Detection System</h1>
+{% include "navbar.html" %}
 
-    <div class="result-card">
+<h1>Healthcare Fraud Detection System</h1>
 
-        <h2 class="section-title">Model Performance Comparison</h2>
+<div class="result-card">
 
-        <table class="result-table">
+    <!-- Dashboard Cards -->
 
-            <tr>
-                <th>Metric</th>
-                <th>Random Forest</th>
-                <th>Federated Learning</th>
-            </tr>
+    <div class="dashboard-cards">
 
-            <tr>
-                <td>Accuracy</td>
-                <td>{{ "%.2f"|format(comparison["Random Forest"]["accuracy"] * 100) }}%</td>
-                <td>{{ "%.2f"|format(comparison["Federated Learning"]["accuracy"] * 100) }}%</td>
-            </tr>
+        <div class="dashboard-card">
+            <h3>Random Forest</h3>
+            <h2>{{ "%.2f"|format(comparison["Random Forest"]["accuracy"] * 100) }}%</h2>
+            <p>Accuracy</p>
+        </div>
 
-            <tr>
-                <td>Precision</td>
-                <td>{{ "%.2f"|format(comparison["Random Forest"]["precision"] * 100) }}%</td>
-                <td>{{ "%.2f"|format(comparison["Federated Learning"]["precision"] * 100) }}%</td>
-            </tr>
+        <div class="dashboard-card">
+            <h3>Federated Learning</h3>
+            <h2>{{ "%.2f"|format(comparison["Federated Learning"]["accuracy"] * 100) }}%</h2>
+            <p>Accuracy</p>
+        </div>
 
-            <tr>
-                <td>Recall</td>
-                <td>{{ "%.2f"|format(comparison["Random Forest"]["recall"] * 100) }}%</td>
-                <td>{{ "%.2f"|format(comparison["Federated Learning"]["recall"] * 100) }}%</td>
-            </tr>
-
-            <tr>
-                <td>F1 Score</td>
-                 <td>{{ "%.2f"|format(comparison["Random Forest"]["f1_score"] * 100) }}%</td>
-                 <td>{{ "%.2f"|format(comparison["Federated Learning"]["f1_score"] * 100) }}%</td>
-            </tr>
-
-            <tr>
-                <td>ROC-AUC</td>
-                <td>{{ "%.2f"|format(comparison["Random Forest"]["roc_auc"] * 100) }}%</td>
-                <td>{{ "%.2f"|format(comparison["Federated Learning"]["roc_auc"] * 100) }}%</td>
-            </tr>
-
-        </table>
-
-        <br>
-
-        <div style="text-align:center;">
-
-            <a href="/" class="nav-button">
-                ⬅ Back Home
-            </a>
-
+        <div class="dashboard-card">
+            <h3>Best Model</h3>
+            <h2>Federated</h2>
+            <p>Higher ROC-AUC</p>
         </div>
 
     </div>
 
-</body>
+    <!-- Table -->
 
+    <h2 class="section-title">Detailed Performance Comparison</h2>
+
+    <table class="result-table">
+
+        <tr>
+            <th>Metric</th>
+            <th>Random Forest</th>
+            <th>Federated Learning</th>
+        </tr>
+
+        <tr>
+            <td>Accuracy</td>
+            <td>{{ "%.2f"|format(comparison["Random Forest"]["accuracy"] * 100) }}%</td>
+            <td>{{ "%.2f"|format(comparison["Federated Learning"]["accuracy"] * 100) }}%</td>
+        </tr>
+
+        <tr>
+            <td>Precision</td>
+            <td>{{ "%.2f"|format(comparison["Random Forest"]["precision"] * 100) }}%</td>
+            <td>{{ "%.2f"|format(comparison["Federated Learning"]["precision"] * 100) }}%</td>
+        </tr>
+
+        <tr>
+            <td>Recall</td>
+            <td>{{ "%.2f"|format(comparison["Random Forest"]["recall"] * 100) }}%</td>
+            <td>{{ "%.2f"|format(comparison["Federated Learning"]["recall"] * 100) }}%</td>
+        </tr>
+
+        <tr>
+            <td>F1 Score</td>
+            <td>{{ "%.2f"|format(comparison["Random Forest"]["f1_score"] * 100) }}%</td>
+            <td>{{ "%.2f"|format(comparison["Federated Learning"]["f1_score"] * 100) }}%</td>
+        </tr>
+
+        <tr>
+            <td>ROC-AUC</td>
+            <td>{{ "%.2f"|format(comparison["Random Forest"]["roc_auc"] * 100) }}%</td>
+            <td>{{ "%.2f"|format(comparison["Federated Learning"]["roc_auc"] * 100) }}%</td>
+        </tr>
+
+    </table>
+
+    <h2 class="section-title">
+    Performance Visualization
+    </h2>
+
+    <div class="chart-container">
+
+       <canvas id="comparisonChart"></canvas>
+
+    </div>
+
+
+    <br>
+
+    <div style="text-align:center;">
+
+        <a href="/" class="nav-button">
+            ⬅ Back Home
+        </a>
+
+    </div>
+
+</div>
+ <script>
+
+const ctx = document.getElementById('comparisonChart');
+
+new Chart(ctx, {
+
+    type: 'bar',
+
+    data: {
+
+        labels: [
+
+            'Accuracy',
+
+            'Precision',
+
+            'Recall',
+
+            'F1 Score',
+
+            'ROC-AUC'
+
+        ],
+
+        datasets: [
+
+            {
+
+                label: 'Random Forest',
+
+                data: [
+
+                    {{ comparison["Random Forest"]["accuracy"]*100 }},
+
+                    {{ comparison["Random Forest"]["precision"]*100 }},
+
+                    {{ comparison["Random Forest"]["recall"]*100 }},
+
+                    {{ comparison["Random Forest"]["f1_score"]*100 }},
+
+                    {{ comparison["Random Forest"]["roc_auc"]*100 }}
+
+                ]
+
+            },
+
+            {
+
+                label: 'Federated Learning',
+
+                data: [
+
+                    {{ comparison["Federated Learning"]["accuracy"]*100 }},
+
+                    {{ comparison["Federated Learning"]["precision"]*100 }},
+
+                    {{ comparison["Federated Learning"]["recall"]*100 }},
+
+                    {{ comparison["Federated Learning"]["f1_score"]*100 }},
+
+                    {{ comparison["Federated Learning"]["roc_auc"]*100 }}
+
+                ]
+
+            }
+
+        ]
+
+    },
+
+    options: {
+
+        responsive:true,
+
+        plugins:{
+
+            legend:{
+                position:'top'
+            }
+        },
+
+        scales:{
+            y:{
+                beginAtZero:true,
+                max:100
+            }
+        }
+
+    }
+
+});
+
+</script>
+
+</body>
 </html>

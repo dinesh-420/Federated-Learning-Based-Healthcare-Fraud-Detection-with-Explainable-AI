@@ -8,6 +8,8 @@
 
 <body>
 
+{% include "navbar.html" %}
+
     <h1>Healthcare Fraud Detection System</h1>
 
     <form action="/predict" method="POST">
@@ -87,17 +89,7 @@
         <br><br>
 
     </form>
-    <div style="text-align:center; margin-top:25px;">
-        
-        <a href="/comparison" class="nav-button">
-            📊 Compare Models
-        </a>
-
-        <a href="/history" class="nav-button">
-            📜 Prediction History
-        </a>
-    </div>
-
+     
 </body>
 
 </html>

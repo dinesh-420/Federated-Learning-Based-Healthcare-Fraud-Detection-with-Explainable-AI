@@ -1,19 +1,97 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Prediction History</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
+{% include "navbar.html" %}
+
 <div class="container">
 
-    <h1>Prediction History</h1>
+    <h1>Prediction History Dashboard</h1>
 
-    <table border="1" cellpadding="8" cellspacing="0">
+    <!-- Dashboard -->
+
+    {% set total = predictions|length %}
+    {% set fraud = predictions|selectattr('prediction','equalto','Fraud')|list|length %}
+    {% set genuine = total - fraud %}
+
+    <div class="dashboard-cards">
+
+        <div class="dashboard-card">
+            <h3>Total Predictions</h3>
+            <h2>{{ total }}</h2>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Fraud Cases</h3>
+            <h2>{{ fraud }}</h2>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Genuine Cases</h3>
+            <h2>{{ genuine }}</h2>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Fraud Rate</h3>
+
+            <h2>
+
+                {% if total > 0 %}
+                    {{ "%.2f"|format((fraud/total)*100) }}%
+                {% else %}
+                    0%
+                {% endif %}
+
+            </h2>
+
+        </div>
+
+    </div>
+
+    <br>
+
+    <!-- Download Buttons -->
+
+    <div class="history-actions">
+
+        <a href="/download_csv" class="nav-button">
+            ⬇ Download CSV
+        </a>
+
+        <a href="/download_pdf" class="nav-button">
+            📄 Download PDF
+        </a>
+
+    </div>
+
+    <br>
+
+    <!-- Search -->
+
+    <input
+        type="text"
+        id="historySearch"
+        placeholder="🔍 Search Prediction History..."
+    >
+
+    <br><br>
+
+    <!-- History Table -->
+
+    <table class="history-table" id="historyTable">
+
+        <thead>
 
         <tr>
+
             <th>ID</th>
             <th>Age</th>
             <th>Gender</th>
@@ -26,12 +104,18 @@
             <th>Confidence</th>
             <th>Fraud %</th>
             <th>Time</th>
-            <th>Model Used</th>
+            <th>Model</th>
+
         </tr>
+
+        </thead>
+
+        <tbody>
 
         {% for row in predictions %}
 
         <tr>
+
             <td>{{ row.id }}</td>
             <td>{{ row.patient_age }}</td>
             <td>{{ row.patient_gender }}</td>
@@ -40,22 +124,70 @@
             <td>{{ row.diagnosis_code }}</td>
             <td>{{ row.claim_amount }}</td>
             <td>{{ row.approved_amount }}</td>
-            <td>{{ row.prediction }}</td>
+
+            <td>
+
+                {% if "Fraud" in row.prediction %}
+
+                    <span class="badge-fraud">
+                        Fraud
+                    </span>
+
+                {% else %}
+
+                    <span class="badge-safe">
+                        Genuine
+                    </span>
+
+                {% endif %}
+
+            </td>
+
             <td>{{ row.confidence }}%</td>
+
             <td>{{ row.fraud_probability }}%</td>
+
             <td>{{ row.prediction_time }}</td>
+
             <td>{{ row.model_name }}</td>
+
         </tr>
 
         {% endfor %}
+
+        </tbody>
 
     </table>
 
     <br>
 
-    <a href="/">⬅ Back to Prediction</a>
+    <a href="/" class="nav-button">
+        ⬅ Back Home
+    </a>
 
 </div>
+
+<script>
+
+const search = document.getElementById("historySearch");
+
+search.addEventListener("keyup", function () {
+
+    const value = this.value.toLowerCase();
+
+    const rows = document.querySelectorAll("#historyTable tbody tr");
+
+    rows.forEach(function(row){
+
+        const text = row.textContent.toLowerCase();
+
+        row.style.display = text.includes(value) ? "" : "none";
+
+    });
+
+});
+
+</script>
 
 </body>
 </html>
