@@ -15,18 +15,22 @@ class FederatedPredictor:
         hospital_results = []
         probabilities = []
 
+        threshold = 20  # Same threshold as Random Forest
+
         for i, model in enumerate(self.models):
 
             prob = model.predict_proba(X)
 
-            pred = np.argmax(prob, axis=1)
-
             probabilities.append(prob)
+
+            fraud_prob = prob[0][1] * 100
 
             hospital_results.append({
                 "hospital": f"Hospital {chr(65+i)}",
-                "prediction": "🚨 Fraudulent" if pred[0] == 1 else "✅ Genuine",
-                "fraud_probability": round(prob[0][1] * 100, 2)
+                "fraud_probability": round(fraud_prob, 2),
+                "prediction": "🚨 Fraudulent"
+                              if fraud_prob >= threshold
+                              else "✅ Genuine"
             })
 
         avg_probability = np.mean(probabilities, axis=0)

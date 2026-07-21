@@ -19,38 +19,46 @@
     <!-- Dashboard -->
 
     {% set total = predictions|length %}
-    {% set fraud = predictions|selectattr('prediction','equalto','Fraud')|list|length %}
-    {% set genuine = total - fraud %}
+
+    {% set fraud = namespace(count=0) %}
+
+    {% for row in predictions %}
+        {% if "Fraud" in row.prediction %}
+           {% set fraud.count = fraud.count + 1 %}
+        {% endif %}
+    {% endfor %}
+
+    {% set genuine = total - fraud.count %}
 
     <div class="dashboard-cards">
 
         <div class="dashboard-card">
-            <h3>Total Predictions</h3>
-            <h2>{{ total }}</h2>
+           <h3>Total Predictions</h3>
+           <h2>{{ total }}</h2>
         </div>
 
         <div class="dashboard-card">
-            <h3>Fraud Cases</h3>
-            <h2>{{ fraud }}</h2>
+           <h3>Fraud Cases</h3>
+           <h2>{{ fraud.count }}</h2>
         </div>
 
         <div class="dashboard-card">
-            <h3>Genuine Cases</h3>
-            <h2>{{ genuine }}</h2>
+           <h3>Genuine Cases</h3>
+           <h2>{{ genuine }}</h2>
         </div>
 
         <div class="dashboard-card">
-            <h3>Fraud Rate</h3>
+           <h3>Fraud Rate</h3>
 
-            <h2>
+           <h2>
 
-                {% if total > 0 %}
-                    {{ "%.2f"|format((fraud/total)*100) }}%
-                {% else %}
-                    0%
-                {% endif %}
+              {% if total > 0 %}
+                 {{ "%.2f"|format((fraud.count/total)*100) }}%
+              {% else %}
+                 0%
+              {% endif %}
 
-            </h2>
+           </h2>
 
         </div>
 

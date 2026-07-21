@@ -226,6 +226,9 @@ def predict():
        prediction = model.predict(claim_df)
        probability = model.predict_proba(claim_df)
 
+       print("Model Classes:", model.classes_)
+       print("Prediction Probabilities:", probability)
+
        # SHAP Explainability
        shap_values = explainer.shap_values(claim_df)
 
@@ -322,14 +325,23 @@ def predict():
     else:
         model_name = "Federated Learning Ensemble"
 
-    if prediction[0] == 1:
-        result = "🚨 Fraudulent Claim"
-        color = "red"
-        confidence = round(probability[0][1] * 100, 2)
+    # -----------------------------
+    # Fraud Threshold Optimization
+    # -----------------------------
+
+    FRAUD_THRESHOLD = 20   # percentage
+
+    if fraud_probability >= FRAUD_THRESHOLD:
+
+       result = "🚨 Fraudulent Claim"
+       color = "red"
+       confidence = fraud_probability
+
     else:
+
         result = "✅ Genuine Claim"
         color = "green"
-        confidence = round(probability[0][0] * 100, 2)
+        confidence = round(100 - fraud_probability, 2)
 
     if model_type == "federated":
         hospital_results.append({
