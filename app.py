@@ -590,5 +590,86 @@ def download_pdf():
         }
     )
 
+@app.route("/batch_upload", methods=["GET", "POST"])
+def batch_upload():
+
+    if request.method == "GET":
+        return render_template("batch_upload.html")
+
+    file = request.files["csv_file"]
+
+    if file.filename == "":
+        return "No file selected."
+
+    df = pd.read_csv(file)
+  
+    required_columns = [
+        "patient_age",
+        "patient_gender",
+        "hospital_type",
+        "treatment_category",
+        "diagnosis_code",
+        "claim_amount",
+        "approved_amount",
+        "hospital_stay_days",
+        "previous_claims_count",
+        "policy_tenure_years",
+        "claim_submission_delay_days",
+        "high_risk_procedure_flag",
+        "document_mismatch_flag",
+        "anomaly_score"
+    ]
+
+    missing = [c for c in required_columns if c not in df.columns]
+
+    if missing:
+       return f"Missing columns: {missing}"
+
+    # Remove columns that should not be inputs
+    predict_df = df.copy()
+
+    if "claim_id" in predict_df.columns:
+        predict_df = predict_df.drop(columns=["claim_id"])
+
+    if "fraud_label" in predict_df.columns:
+        predict_df = predict_df.drop(columns=["fraud_label"])
+
+    # Encode categorical columns
+    for col, encoder in label_encoders.items():
+        predict_df[col] = encoder.transform(predict_df[col])
+
+    # Reorder columns
+    predict_df = predict_df[feature_columns]
+
+    # Predict
+    predictions = model.predict(predict_df)
+    probabilities = model.predict_proba(predict_df)
+
+    results = df.copy()
+
+    results["Fraud Probability"] = (probabilities[:,1] * 100).round(2)
+
+    results["Prediction"] = [
+         "🚨 Fraudulent Claim" if p >= 20 else "✅ Genuine Claim"
+         for p in results["Fraud Probability"]
+]
+
+    # Save results
+    results.to_csv(
+        "static/batch_prediction_results.csv",
+         index=False,
+         encoding="utf-8-sig"
+    )
+
+    return f"""
+    <h2>Batch Prediction Completed</h2>
+
+    Rows Processed : {len(results)} <br><br>
+
+    <a href="/static/batch_prediction_results.csv">
+    Download Prediction Results CSV
+    </a>
+    """
+
 if __name__ == "__main__":
     app.run(debug=True)
