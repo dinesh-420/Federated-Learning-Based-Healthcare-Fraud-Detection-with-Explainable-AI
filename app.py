@@ -333,15 +333,19 @@ def predict():
 
     if fraud_probability >= FRAUD_THRESHOLD:
 
-       result = "🚨 Fraudulent Claim"
+       result = "🚨 Fraudulent Claim"          # Display on webpage
+       db_result = "Fraudulent Claim"          # Save in MySQL
+
        color = "red"
        confidence = fraud_probability
 
     else:
 
-        result = "✅ Genuine Claim"
-        color = "green"
-        confidence = round(100 - fraud_probability, 2)
+       result = "✅ Genuine Claim"
+       db_result = "Genuine Claim"
+
+       color = "green"
+       confidence = round(100 - fraud_probability, 2)
 
     if model_type == "federated":
         hospital_results.append({
@@ -387,7 +391,7 @@ def predict():
             diagnosis_code,
             float(claim_amount),
             float(approved_amount),
-            result,
+            db_result,
             confidence,
             fraud_probability,
             model_name
@@ -634,12 +638,23 @@ def batch_upload():
     if "fraud_label" in predict_df.columns:
         predict_df = predict_df.drop(columns=["fraud_label"])
 
-    # Encode categorical columns
+    # Encode categorical columns safely
     for col, encoder in label_encoders.items():
+
+        # Convert to string
+        predict_df[col] = predict_df[col].astype(str)
+
+        # Replace unseen values with the first known class
+        predict_df[col] = predict_df[col].apply(
+            lambda x: x if x in encoder.classes_ else encoder.classes_[0]
+        )
+
         predict_df[col] = encoder.transform(predict_df[col])
 
     # Reorder columns
     predict_df = predict_df[feature_columns]
+
+
 
     # Predict
     predictions = model.predict(predict_df)
